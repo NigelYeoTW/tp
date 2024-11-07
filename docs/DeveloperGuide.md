@@ -117,7 +117,8 @@ Below illustrates the reference frame of recurrence updating <br>
 <br>
 <img src="./Diagrams/Recurrence/updatingRecurrenceSD.png" alt="updatingRecurrenceSequenceDiagram" width="700"/>
 <br>
-For the reference frame of 'load from storage', it is as explained previously <br>
+For the reference frame of 'load from storage', it has been previously explained, please refer above for the 
+implementation <br>
 For the reference frame of 'add recurring entry', refer to
 [checkIncomeRecurrence / checkSpendingRecurrence](#checkincomerecurrence--checkspendingrecurrence-method) method. <br>
 
@@ -126,7 +127,7 @@ For the reference frame of 'add recurring entry', refer to
   `Wiagi` to retrieve past data.
 + `updateRecurrence()` is called
 + Both `SpendingList` and `IncomeList` are then iterated through. Each member of the lists is parsed through
-  `Parser#parseRecurrence` which returns the type of recurrence it is (e.g. `DailyRecurrence`, `null`)
+  `Parser#parseRecurrence` which returns a child class of `Recurrence` (e.g. `DailyRecurrence`, `null`)
   which is encapsulated as a `Recurrence` object.
 + If `Recurrence` is not `null` (i.e. a recurring entry), it checks the entry and adds to the `SpendingList` and
   `IncomeList` if needed via `Recurrence#checkIncomeRecurrence` or `Recurrence#checkSpendingRecurrence`. <br>
@@ -150,12 +151,12 @@ Since checkSpendingRecurrence method follows the same sequence as checkIncomeRec
 for conciseness.
 
 Functionality: <br>
-1. Checks `lastRecurred` attribute of `recurringIncome`/`recurringSpending`(i.e. entry to check) against the current date
+1. Checks `lastRecurrence` attribute of `recurringIncome`/`recurringSpending`(i.e. entry to check) against the current date
    via `LocalDate.now()`
-2. According to the type of recurrence, loops `lastRecurred` with the frequency incrementally
+2. According to the type of recurrence, loops `lastRecurrence` with the frequency incrementally
 3. Adds a recurring entry each time into the `IncomeList`/`SpendingList` if date is still of the past.
 4. isAdding is set to `true` for recurrence updating to allow adding of entries, it may be set to `false` for
-   backlogging as seen later to only update `lastRecurred` attribute to the latest possible recurring date to
+   backlogging as seen later to only update `lastRecurrence` attribute to the latest possible recurring date to
    be checked against in the future for recurrence updating
 
 ##### parseRecurrence method
@@ -188,7 +189,7 @@ protected <T extends EntryType> void checkIfDateAltered(T newEntry, LocalDate ch
 ArrayList<T> list, boolean isAdding)
 ```
 Functionality: <br>
-1. Get the actual day (e.g. 31st) of supposed recurrence from `dayOfRecurrence` attribute of entry
+1. Get the actual day (e.g. 31st) of supposed recurrence from `dayOfRecurrence` attribute of `Income` or `Spending`
 2. Get the last day of the current month
 3. Return the date with the minimum of the 2 to ensure that date of recurrence is valid
 
@@ -201,7 +202,7 @@ user logs in, 4 days of entries will be added). List is thus also sorted by date
   added in the future
 + Here is a scenario of why `dayOfRecurrence` is tracked:
     + Monthly recurring entry dated at 31st August
-    + Since September ends on the 30th, recurring entry is added on the 30th September and `lastRecurred` is stored as
+    + Since September ends on the 30th, recurring entry is added on the 30th September and `lastRecurrence` is stored as
       30th September
     + `dayOfRecurrence` is used to track the real date of recurrence since the day will be overwritten
     + However, due to varying days in months, `checkIfDateAltered` is used to validate the date of entry
@@ -221,9 +222,9 @@ day is added <br>
 #### How the recurrence backlogging works
 + Upon adding an entry with recurrence dated to the past, the `Ui#hasRecurrenceBacklog` method will be called to get
   user input on whether to backlog
-+ According to the user input, `Recurrence#checkIncomeRecurrence` or `Recurrence#checkSpendingRecurrence` will be
-  called to update the `lastRecurred` attribute of the entry as well as add recurring entries from the entry date to
-  current date if user wishes to
++ `Recurrence#checkIncomeRecurrence` or `Recurrence#checkSpendingRecurrence` will be
+called to update the `lastRecurrence` attribute of the entry. Then according to the user input, also add recurring 
+entries from the entry date to current date if user wishes to
 
 #### Implementation
 The following are notable methods used to achieve recurrence backlogging. Methods `Recurrence#checkIncomeRecurrence`,
@@ -240,7 +241,7 @@ Functionality:
 1. Calls upon the `Parser#parseRecurrence` method to determine the type fo recurrence
 2. Ask if user wishes to backlog all the past entries from date of entry to current date via
    `Ui#hasRecurrenceBacklog` which returns a boolean, true if yes, false otherwise
-3. Updates the `lastRecurred` attribute of the entry to facilitate future adding of recurrence and if boolean is true,
+3. Updates the `lastRecurrence` attribute of the entry to facilitate future adding of recurrence and if boolean is true,
    also adds backlog entries to `IncomeList` or `SpendingList` via [`Recurrence#checkIncomeRecurrence` and
    `Recurrence#checkSpendingRecurrence`](#checkincomerecurrence--checkspendingrecurrence-method)
 
